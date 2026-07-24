@@ -92,7 +92,6 @@
   .btn-exit{color:var(--danger); border-color:#3a2426;}
   .btn-exit:active{background:var(--danger-dim);}
 
-  .chip-row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
   .chip{
     border:1px solid var(--line); background:var(--surface); color:var(--text-dim);
     border-radius:14px; padding:14px 6px; font-size:13px; font-weight:600;
@@ -358,15 +357,6 @@
   </section>
 
   <section>
-    <div class="section-label">Tela de projeção</div>
-    <div class="chip-row">
-      <button class="chip" data-toggle="F8" data-icon="🖼"><span class="icon">🖼</span>Wallpaper</button>
-      <button class="chip" data-toggle="F9" data-icon="◻"><span class="icon">◻</span>Branco</button>
-      <button class="chip" data-toggle="F10" data-icon="⬛"><span class="icon">⬛</span>Preto</button>
-    </div>
-  </section>
-
-  <section>
     <div class="section-label">Mídia (áudio / vídeo)</div>
     <div class="media-grid">
       <button class="media-btn" data-media="previous">⏮</button>
@@ -374,6 +364,15 @@
       <button class="media-btn" data-media="stop">⏹</button>
       <button class="media-btn" data-media="next">⏭</button>
       <button class="media-btn" id="muteBtn" data-media="mute">🔊</button>
+      <button class="media-btn" id="openCountdown">⏱</button>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+      <button class="chip" data-toggle="F8">
+        <span class="icon">🖼</span>Wallpaper
+      </button>
+      <button class="chip" id="playAnnouncement">
+        <span class="icon">📢</span>Aviso
+      </button>
     </div>
     <div class="volume">
       <span class="icon">🔊</span>
@@ -421,6 +420,44 @@
     <div class="modal-actions">
       <button id="cancelSettings">Cancelar</button>
       <button class="save" id="saveSettings">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-wrap" id="alertModalWrap">
+  <div class="modal">
+    <h2>Aviso na tela</h2>
+    <div class="field">
+      <label>Mensagem</label>
+      <input type="text" id="alertText" placeholder="Ex: Reunião de líderes após o culto">
+    </div>
+    <div class="modal-actions">
+      <button id="cancelAlert">Cancelar</button>
+      <button class="save" id="sendAlert">Exibir</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-wrap" id="countdownModalWrap">
+  <div class="modal">
+    <h2>Contagem regressiva</h2>
+    <div class="field-row">
+      <div class="field">
+        <label>Minutos</label>
+        <input type="text" id="cdMinutes" placeholder="5" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>Segundos</label>
+        <input type="text" id="cdSeconds" placeholder="00" inputmode="numeric">
+      </div>
+    </div>
+    <div class="field">
+      <label>Texto acima (opcional)</label>
+      <input type="text" id="cdText" placeholder="Culto começa em">
+    </div>
+    <div class="modal-actions">
+      <button id="cancelCountdown">Cancelar</button>
+      <button class="save" id="startCountdown">Iniciar</button>
     </div>
   </div>
 </div>
@@ -748,6 +785,60 @@
   document.getElementById('openAddSong').addEventListener('click', openAddSongModal);
   document.getElementById('addSongClose').addEventListener('click', ()=>{
     document.getElementById('addSongModal').classList.remove('show');
+  });
+
+  // Countdown timer — action name not officially confirmed yet, so try the likely
+  // candidates in order and remember whichever one works.
+  const COUNTDOWN_ACTION_CANDIDATES = ['ShowCountdown', 'StartCountdown', 'ShowCountdownPublic'];
+  let countdownActionThatWorks = null;
+
+  document.getElementById('openCountdown').addEventListener('click', ()=>{
+    document.getElementById('cdMinutes').value = '';
+    document.getElementById('cdSeconds').value = '';
+    document.getElementById('cdText').value = '';
+    document.getElementById('countdownModalWrap').classList.add('show');
+  });
+  document.getElementById('cancelCountdown').addEventListener('click', ()=>{
+    document.getElementById('countdownModalWrap').classList.remove('show');
+  });
+  document.getElementById('startCountdown').addEventListener('click', async ()=>{
+    const mins = (document.getElementById('cdMinutes').value.trim() || '0').padStart(2, '0');
+    const secs = (document.getElementById('cdSeconds').value.trim() || '0').padStart(2, '0');
+    const textBefore = document.getElementById('cdText').value.trim();
+    const payload = { time: `${mins}:${secs}`, exact_time: false };
+    if(textBefore) payload.text_before = textBefore;
+
+    const actionsToTry = countdownActionThatWorks ? [countdownActionThatWorks] : COUNTDOWN_ACTION_CANDIDATES;
+    for(const action of actionsToTry){
+      const data = await callAction(action, payload, { silent:true });
+      if(data && data.status === 'ok'){
+        countdownActionThatWorks = action;
+        showToast('Contagem iniciada');
+        document.getElementById('countdownModalWrap').classList.remove('show');
+        return;
+      }
+    }
+    showToast('Não consegui iniciar — confira o console', true);
+  });
+
+  // Public announcements — shows a text alert on the main screen via SetAlert.
+  document.getElementById('playAnnouncement').addEventListener('click', ()=>{
+    document.getElementById('alertText').value = '';
+    document.getElementById('alertModalWrap').classList.add('show');
+  });
+  document.getElementById('cancelAlert').addEventListener('click', ()=>{
+    document.getElementById('alertModalWrap').classList.remove('show');
+  });
+  document.getElementById('sendAlert').addEventListener('click', async ()=>{
+    const text = document.getElementById('alertText').value.trim();
+    if(!text){ showToast('Digite uma mensagem', true); return; }
+    const data = await callAction('SetAlert', { text }, { silent:true });
+    if(data && data.status === 'ok'){
+      showToast('Aviso exibido');
+      document.getElementById('alertModalWrap').classList.remove('show');
+    } else {
+      showToast((data && data.error) || 'Não consegui exibir', true);
+    }
   });
 
   // Current content preview — shows the slides of whatever is on screen right now, so you
