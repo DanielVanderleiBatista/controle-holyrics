@@ -1,7 +1,7 @@
 // Minimal service worker — mostly here to satisfy PWA installability requirements
 // and let the app shell open even with a flaky connection. It does NOT cache API
 // calls to Holyrics (those must always hit the network live).
-const CACHE_NAME = 'controle-holyrics-v1';
+const CACHE_NAME = 'controle-holyrics-v2';
 const APP_SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
