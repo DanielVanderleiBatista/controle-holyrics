@@ -4,15 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Controle Holyrics</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0b0d10">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Holyrics">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
 <style>
+  /* Without this, elements whose class sets display:grid/flex ignore the [hidden]
+     attribute (author styles beat the browser's built-in [hidden]{display:none} rule).
+     This was why book/chapter/verse grids and other panels stayed stacked instead of
+     actually hiding when toggled via JS (`el.hidden = true`). */
+  [hidden]{ display:none !important; }
+  button{ color:inherit; font:inherit; }
   :root{
     --bg:#0b0d10;
     --surface:#15181d;
@@ -25,7 +23,7 @@
     --danger:#ff5c5c;
     --danger-dim:#3a1f1f;
     --text:#eef1f5;
-    --text-dim:#8b93a1;
+    --text-dim:#a5aebb;
     --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
@@ -266,6 +264,7 @@
   .modal{
     background:var(--surface); border:1px solid var(--line); border-radius:22px 22px 0 0;
     width:100%; max-width:480px; padding:22px 20px calc(22px + env(safe-area-inset-bottom));
+    max-height:88vh; overflow-y:auto;
   }
   .modal h2{margin:0 0 16px; font-size:16px;}
   .field{margin-bottom:14px;}
@@ -282,6 +281,28 @@
   }
   .modal-actions .save{background:var(--accent); color:var(--accent-text); border-color:var(--accent);}
   .hint{font-size:12px; color:var(--text-dim); line-height:1.5; margin-top:2px;}
+
+  .setup-steps{
+    list-style:none; margin:0 0 14px; padding:0;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .setup-steps li{
+    display:flex; gap:10px; font-size:13px; color:var(--text); line-height:1.4;
+  }
+  .setup-steps .step-num{
+    flex-shrink:0; width:20px; height:20px; border-radius:50%;
+    background:var(--surface-2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:11px; color:var(--text-dim);
+  }
+  .setup-alert{
+    display:flex; gap:10px; align-items:flex-start;
+    background:var(--danger-dim); border:1px solid #5a2c2c;
+    border-radius:12px; padding:12px 14px; margin-bottom:14px;
+  }
+  .setup-alert .icon{font-size:16px; flex-shrink:0;}
+  .setup-alert p{margin:0; font-size:12.5px; color:var(--text); line-height:1.5;}
+  .setup-alert strong{color:var(--danger);}
 </style>
 </head>
 <body>
@@ -328,6 +349,7 @@
     <div class="playlist" id="playlist">
       <div class="playlist-empty">Toque em ⟳ pra carregar a lista</div>
     </div>
+    <button class="btn wide" id="openAddSong" style="margin-top:10px;"><span class="icon">➕</span>Adicionar música</button>
   </section>
 
   <section>
@@ -366,6 +388,19 @@
 <div class="modal-wrap" id="modalWrap">
   <div class="modal">
     <h2>Configuração de conexão</h2>
+    <p class="hint" style="margin-bottom:14px;">
+      Preencha os campos abaixo depois de seguir os passos no computador que roda a Holyrics:
+    </p>
+    <ol class="setup-steps">
+      <li><span class="step-num">1</span> Menu <strong>Arquivo → Configurações → API Server</strong></li>
+      <li><span class="step-num">2</span> Em "API Server – Local", ative e anote a <strong>Porta</strong> (padrão 8091)</li>
+      <li><span class="step-num">3</span> Clique em <strong>"Gerenciar permissões"</strong> e crie um token novo</li>
+      <li><span class="step-num">4</span> Copie o token gerado e cole no campo abaixo</li>
+    </ol>
+    <div class="setup-alert">
+      <span class="icon">⚠️</span>
+      <p><strong>Importante:</strong> depois de criar o token, marque <strong>todas as permissões disponíveis na coluna "Local"</strong> — não só algumas. Esse app usa apresentação, tela, player de mídia, playlist de músicas, biblioteca de mídia e Bíblia; se faltar liberar alguma, aquele botão específico vai dar erro de "unauthorized action" sem aviso claro.</p>
+    </div>
     <div class="field-row">
       <div class="field">
         <label>IP do computador (Holyrics)</label>
@@ -381,11 +416,26 @@
       <input type="text" id="cfgToken" placeholder="seu-token">
     </div>
     <p class="hint">
-      No computador: Menu Arquivo → Configurações → API Server. Ative o servidor, anote a porta e crie um token com as permissões de apresentação, tela e player liberadas. Celular e computador precisam estar na mesma rede wifi.
+      Celular e computador precisam estar na mesma rede wifi. O IP é o da rede local (ex: 192.168.x.x) — não use o IP de VPNs como Radmin.
     </p>
     <div class="modal-actions">
       <button id="cancelSettings">Cancelar</button>
       <button class="save" id="saveSettings">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="bible-modal" id="addSongModal">
+  <div class="bible-head">
+    <h2>Adicionar música</h2>
+    <button class="close-btn" id="addSongClose">✕</button>
+  </div>
+  <div class="quick-jump">
+    <input type="text" id="songSearchInput" placeholder="Buscar por título...">
+  </div>
+  <div class="bible-body">
+    <div class="playlist" id="songSearchResults">
+      <div class="playlist-empty">Carregando músicas cadastradas...</div>
     </div>
   </div>
 </div>
@@ -626,6 +676,79 @@
   }
 
   document.getElementById('refreshPlaylist').addEventListener('click', loadPlaylist);
+
+  // Add song to today's service — browse/search the church's full song library
+  // (GetSongs) and add the chosen one to the current playlist.
+  let songLibrary = null; // cached full list, fetched once per modal session
+  const ADD_SONG_ACTION_CANDIDATES = ['AddLyricsToPlaylist'];
+  let addSongActionThatWorks = null;
+
+  async function openAddSongModal(){
+    document.getElementById('addSongModal').classList.add('show');
+    document.getElementById('songSearchInput').value = '';
+    if(!songLibrary){
+      const box = document.getElementById('songSearchResults');
+      box.innerHTML = '<div class="playlist-empty">Carregando músicas cadastradas...</div>';
+      const data = await callAction('GetSongs', {}, { silent:true });
+      if(data && data.status === 'ok' && Array.isArray(data.data)){
+        // Some entries have blank titles (unused/leftover records) — filter those out.
+        songLibrary = data.data.filter(s => (s.title || '').trim().length > 0);
+      } else {
+        songLibrary = [];
+        box.innerHTML = '<div class="playlist-empty">Não consegui carregar a biblioteca de músicas.</div>';
+        return;
+      }
+    }
+    renderSongResults('');
+  }
+
+  function renderSongResults(query){
+    const box = document.getElementById('songSearchResults');
+    const q = query.trim().toLowerCase();
+    const filtered = q
+      ? songLibrary.filter(s => s.title.toLowerCase().includes(q) || (s.artist || '').toLowerCase().includes(q))
+      : songLibrary;
+    if(filtered.length === 0){
+      box.innerHTML = '<div class="playlist-empty">Nenhuma música encontrada.</div>';
+      return;
+    }
+    box.innerHTML = '';
+    filtered.slice(0, 150).forEach(item=>{
+      const row = document.createElement('button');
+      row.className = 'playlist-item';
+      row.innerHTML = `
+        <span class="meta">
+          <span class="title"></span>
+          <span class="artist"></span>
+        </span>`;
+      row.querySelector('.title').textContent = item.title;
+      row.querySelector('.artist').textContent = item.artist || '';
+      row.addEventListener('click', ()=> addSongToToday(item, row));
+      box.appendChild(row);
+    });
+  }
+
+  document.getElementById('songSearchInput').addEventListener('input', (e)=> renderSongResults(e.target.value));
+
+  async function addSongToToday(item, rowEl){
+    const actionsToTry = addSongActionThatWorks ? [addSongActionThatWorks] : ADD_SONG_ACTION_CANDIDATES;
+    for(const action of actionsToTry){
+      const data = await callAction(action, { id: item.id }, { silent:true });
+      if(data && data.status === 'ok'){
+        addSongActionThatWorks = action;
+        showToast(item.title + ' adicionada');
+        rowEl.style.opacity = '.5';
+        loadPlaylist();
+        return;
+      }
+    }
+    showToast('Não consegui adicionar — confira permissões', true);
+  }
+
+  document.getElementById('openAddSong').addEventListener('click', openAddSongModal);
+  document.getElementById('addSongClose').addEventListener('click', ()=>{
+    document.getElementById('addSongModal').classList.remove('show');
+  });
 
   // Current content preview — shows the slides of whatever is on screen right now, so you
   // can jump straight to a specific part instead of only stepping with arrows. Two separate
@@ -1066,14 +1189,6 @@
     loadPlaylist();
     refreshPlayerState();
     loadCurrentLyrics();
-  }
-
-  // PWA install support — only works when served over HTTPS (or localhost), not from
-  // a local file:// path. Silently does nothing if unsupported, so it's safe either way.
-  if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
-    });
   }
 </script>
 </body>
