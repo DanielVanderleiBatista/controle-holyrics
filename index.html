@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Controle Holyrics</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0d10">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Holyrics">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#0b0d10;
+    --surface:#15181d;
+    --surface-2:#1e232a;
+    --line:#282e37;
+    --accent:#9cae6b;
+    --accent-dim:#2c3320;
+    --accent-text:#12180a;
+    --accent-2:#3aa0ff;
+    --danger:#ff5c5c;
+    --danger-dim:#3a1f1f;
+    --text:#eef1f5;
+    --text-dim:#8b93a1;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  body.light{
+    --bg:#f5f4ef;
+    --surface:#ffffff;
+    --surface-2:#eef0e6;
+    --line:#dfe2d6;
+    --accent:#5f7a3d;
+    --accent-dim:#e3ead2;
+    --accent-text:#ffffff;
+    --accent-2:#2f7dc9;
+    --danger:#c23a35;
+    --danger-dim:#fbe0de;
+    --text:#20241a;
+    --text-dim:#68705f;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--sans);
+    display:flex; flex-direction:column;
+    min-height:100vh;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 18px 10px;
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand img{height:38px; width:auto; display:block;}
+  .brand .txt{display:flex; flex-direction:column; gap:2px;}
+  .brand .dot{
+    display:inline-block; width:8px; height:8px; border-radius:50%;
+    background:var(--text-dim); margin-right:8px;
+  }
+  .brand .dot.on{background:#3ecf6e; box-shadow:0 0 8px #3ecf6e;}
+  .brand .dot.err{background:#ff5c5c; box-shadow:0 0 8px #ff5c5c;}
+  .brand h1{font-size:15px; font-weight:600; margin:0; letter-spacing:.02em;}
+  .brand small{font-family:var(--mono); font-size:11px; color:var(--text-dim);}
+  .gear{
+    background:var(--surface); border:1px solid var(--line); color:var(--text-dim);
+    width:38px; height:38px; border-radius:12px; font-size:17px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  main{flex:1; padding:6px 16px 18px; display:flex; flex-direction:column; gap:22px;}
+
+  .section-label{
+    font-family:var(--mono); font-size:11px; text-transform:uppercase;
+    letter-spacing:.12em; color:var(--text-dim); margin:0 2px 10px;
+  }
+
+  .nav-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .btn{
+    border:1px solid var(--line); background:var(--surface); color:var(--text);
+    border-radius:20px; padding:26px 10px; font-size:17px; font-weight:600;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    transition:transform .06s ease, background .15s ease;
+    user-select:none;
+  }
+  .btn:active{transform:scale(.96); background:var(--surface-2);}
+  .btn .icon{font-size:26px; line-height:1;}
+  .btn.wide{grid-column:1 / -1;}
+
+  .btn-exit{color:var(--danger); border-color:#3a2426;}
+  .btn-exit:active{background:var(--danger-dim);}
+
+  .chip-row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+  .chip{
+    border:1px solid var(--line); background:var(--surface); color:var(--text-dim);
+    border-radius:14px; padding:14px 6px; font-size:13px; font-weight:600;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+  }
+  .chip .icon{font-size:19px;}
+  .chip:active{transform:scale(.96);}
+  .chip.active{border-color:var(--accent); color:var(--accent); background:var(--accent-dim);}
+
+  .media-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+  .media-btn{
+    border:1px solid var(--line); background:var(--surface); color:var(--text);
+    border-radius:14px; padding:16px 6px; font-size:20px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .media-btn:active{transform:scale(.94); background:var(--surface-2);}
+  .media-btn.accent{color:var(--accent-2); border-color:#1e3a52;}
+
+  .volume{
+    margin-top:12px; display:flex; align-items:center; gap:12px;
+    background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:10px 14px;
+  }
+  .volume .icon{font-size:16px; color:var(--text-dim);}
+  .volume input[type=range]{flex:1; accent-color:var(--accent-2);}
+  .volume .val{font-family:var(--mono); font-size:12px; color:var(--text-dim); width:30px; text-align:right;}
+
+  .lyrics-list{
+    display:flex; flex-direction:column; gap:6px; max-height:280px; overflow-y:auto;
+  }
+  .lyrics-item{
+    display:flex; align-items:flex-start; gap:10px;
+    border:1px solid var(--line); background:var(--surface);
+    border-radius:12px; padding:10px 12px; text-align:left;
+  }
+  .lyrics-item:active{background:var(--surface-2); transform:scale(.99);}
+  .lyrics-item .num{
+    font-family:var(--mono); font-size:11px; color:var(--text-dim);
+    width:18px; flex-shrink:0; padding-top:2px;
+  }
+  .lyrics-item .body{display:flex; flex-direction:column; gap:2px; min-width:0;}
+  .lyrics-item .tag{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--accent);}
+  .lyrics-item .snippet{font-size:13px; line-height:1.35; color:var(--text); white-space:pre-line;}
+  .lyrics-item.current{border-color:var(--accent); background:var(--accent-dim);}
+
+  .section-head{display:flex; align-items:center; justify-content:space-between; margin:0 2px 10px;}
+  .section-head .section-label{margin:0;}
+  .refresh-btn{
+    background:none; border:none; color:var(--text-dim); font-size:16px; padding:4px 8px;
+  }
+  .refresh-btn:active{color:var(--accent);}
+  .refresh-btn.spin{animation:spin .6s linear;}
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .playlist{
+    display:flex; flex-direction:column; gap:8px; max-height:340px; overflow-y:auto;
+    border-radius:16px;
+  }
+  .playlist-item{
+    display:flex; align-items:center; gap:12px;
+    border:1px solid var(--line); background:var(--surface);
+    border-radius:14px; padding:12px 14px; text-align:left;
+  }
+  .playlist-item:active{background:var(--surface-2); transform:scale(.99);}
+  .playlist-item .num{
+    font-family:var(--mono); font-size:11px; color:var(--text-dim);
+    width:20px; flex-shrink:0;
+  }
+  .playlist-item .meta{display:flex; flex-direction:column; gap:2px; min-width:0;}
+  .playlist-item .title{font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .playlist-item .artist{font-size:12px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .playlist-item.playing{border-color:var(--accent); background:var(--accent-dim);}
+  .playlist-item.playing .title{color:var(--accent);}
+  .playlist-empty{font-size:13px; color:var(--text-dim); font-family:var(--mono); padding:14px 4px;}
+
+  /* Bible picker */
+  .bible-modal{
+    position:fixed; inset:0; background:var(--bg); z-index:30;
+    display:none; flex-direction:column;
+  }
+  .bible-modal.show{display:flex;}
+  .bible-head{
+    display:flex; align-items:center; gap:10px; padding:14px 16px;
+    border-bottom:1px solid var(--line); flex-shrink:0;
+  }
+  .bible-head .back-btn{
+    background:none; border:none; color:var(--text); font-size:20px; padding:4px 8px;
+  }
+  .bible-head h2{font-size:15px; margin:0; flex:1;}
+  .bible-head .close-btn{background:none; border:none; color:var(--text-dim); font-size:20px; padding:4px 8px;}
+  .bible-body{flex:1; overflow-y:auto; padding:14px 16px 14px;}
+  .bible-live-preview{
+    flex-shrink:0; border-top:1px solid var(--line); background:var(--surface);
+    padding:12px 16px calc(14px + env(safe-area-inset-bottom));
+    max-height:38vh; overflow-y:auto;
+  }
+  .bible-live-preview .lyrics-list{max-height:none;}
+
+  .book-grid{
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;
+  }
+  .book-tile{
+    border:none; border-radius:10px; padding:10px 6px; text-align:left;
+    display:flex; flex-direction:column; gap:1px; color:#fff;
+  }
+  .book-tile .abbr{font-size:15px; font-weight:700;}
+  .book-tile .full{font-size:10px; opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  .chapter-grid{
+    display:grid; grid-template-columns:repeat(6, 1fr); gap:8px;
+  }
+  .chapter-tile{
+    border:1px solid var(--line); background:var(--surface); color:var(--text);
+    border-radius:10px; padding:12px 0; font-size:14px; font-weight:600; text-align:center;
+  }
+  .chapter-tile:active{background:var(--surface-2);}
+
+  .verse-step{display:flex; flex-direction:column; gap:14px;}
+  .verse-grid{
+    display:grid; grid-template-columns:repeat(6, 1fr); gap:8px;
+  }
+  .verse-tile{
+    border:1px solid var(--line); background:var(--surface); color:var(--text);
+    border-radius:10px; padding:12px 0; font-size:14px; font-weight:600; text-align:center;
+  }
+  .verse-tile:active{background:var(--surface-2);}
+  .verse-tile.current{border-color:var(--accent); background:var(--accent-dim); color:var(--accent);}
+  .manual-toggle{
+    background:none; border:none; color:var(--accent); font-size:13px; font-weight:600;
+    padding:4px 0; text-align:left;
+  }
+  .manual-entry{display:flex; flex-direction:column; gap:10px;}
+  .manual-entry .field input{
+    text-align:center; font-size:22px; letter-spacing:.05em;
+  }
+  .manual-entry .show-btn{
+    background:var(--accent); color:var(--accent-text); border:none; border-radius:14px;
+    padding:16px; font-size:16px; font-weight:700;
+  }
+  .manual-entry .show-btn:active{opacity:.85;}
+
+  .quick-jump{
+    display:flex; gap:8px; padding:10px 16px; border-bottom:1px solid var(--line); flex-shrink:0;
+  }
+  .quick-jump input{
+    flex:1; background:var(--surface); border:1px solid var(--line); color:var(--text);
+    border-radius:12px; padding:10px 14px; font-size:14px; font-family:var(--mono);
+  }
+  .quick-jump button{
+    background:var(--accent); color:var(--accent-text); border:none; border-radius:12px;
+    padding:0 18px; font-size:14px; font-weight:700;
+  }
+
+  .toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+    background:var(--surface-2); border:1px solid var(--line); color:var(--text);
+    padding:10px 18px; border-radius:999px; font-size:13px; font-family:var(--mono);
+    opacity:0; transition:opacity .2s ease, transform .2s ease; pointer-events:none;
+    white-space:nowrap;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .toast.err{color:var(--danger);}
+
+  /* Settings modal */
+  .modal-wrap{
+    position:fixed; inset:0; background:rgba(0,0,0,.6); display:none;
+    align-items:flex-end; justify-content:center; z-index:20;
+  }
+  .modal-wrap.show{display:flex;}
+  .modal{
+    background:var(--surface); border:1px solid var(--line); border-radius:22px 22px 0 0;
+    width:100%; max-width:480px; padding:22px 20px calc(22px + env(safe-area-inset-bottom));
+  }
+  .modal h2{margin:0 0 16px; font-size:16px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; font-family:var(--mono);}
+  .field input{
+    width:100%; background:var(--bg); border:1px solid var(--line); color:var(--text);
+    border-radius:12px; padding:12px 14px; font-size:15px; font-family:var(--mono);
+  }
+  .field-row{display:grid; grid-template-columns:2fr 1fr; gap:10px;}
+  .modal-actions{display:flex; gap:10px; margin-top:6px;}
+  .modal-actions button{
+    flex:1; padding:14px; border-radius:12px; border:1px solid var(--line);
+    background:var(--surface-2); color:var(--text); font-size:15px; font-weight:600;
+  }
+  .modal-actions .save{background:var(--accent); color:var(--accent-text); border-color:var(--accent);}
+  .hint{font-size:12px; color:var(--text-dim); line-height:1.5; margin-top:2px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="data:image/png;base64,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" alt="IBBG">
+    <div class="txt">
+      <h1><span class="dot" id="statusDot"></span>Controle Holyrics</h1>
+      <small id="targetLabel">não configurado</small>
+    </div>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button class="gear" id="themeToggle">🌙</button>
+    <button class="gear" id="openSettings">⚙</button>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="section-label">Apresentação</div>
+    <div class="nav-grid">
+      <button class="btn" data-action="ActionPrevious"><span class="icon">◀</span>Anterior</button>
+      <button class="btn" data-action="ActionNext"><span class="icon">▶</span>Próximo</button>
+      <button class="btn wide btn-exit" data-action="CloseCurrentPresentation"><span class="icon">✕</span>Fechar apresentação</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="section-label">Letra atual</div>
+      <button class="refresh-btn" id="refreshLyrics">⟳</button>
+    </div>
+    <div class="lyrics-list" id="lyricsList">
+      <div class="playlist-empty">Toque em ⟳ com uma música na tela pra ver os trechos</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="section-label">Programação de hoje</div>
+      <button class="refresh-btn" id="refreshPlaylist">⟳</button>
+    </div>
+    <div class="playlist" id="playlist">
+      <div class="playlist-empty">Toque em ⟳ pra carregar a lista</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-label">Bíblia</div>
+    <button class="btn wide" id="openBible"><span class="icon">📖</span>Buscar versículo</button>
+  </section>
+
+  <section>
+    <div class="section-label">Tela de projeção</div>
+    <div class="chip-row">
+      <button class="chip" data-toggle="F8" data-icon="🖼"><span class="icon">🖼</span>Wallpaper</button>
+      <button class="chip" data-toggle="F9" data-icon="◻"><span class="icon">◻</span>Branco</button>
+      <button class="chip" data-toggle="F10" data-icon="⬛"><span class="icon">⬛</span>Preto</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-label">Mídia (áudio / vídeo)</div>
+    <div class="media-grid">
+      <button class="media-btn" data-media="previous">⏮</button>
+      <button class="media-btn accent" id="playPauseBtn" data-media="playpause">▶</button>
+      <button class="media-btn" data-media="stop">⏹</button>
+      <button class="media-btn" data-media="next">⏭</button>
+      <button class="media-btn" id="muteBtn" data-media="mute">🔊</button>
+    </div>
+    <div class="volume">
+      <span class="icon">🔊</span>
+      <input type="range" id="volumeSlider" min="0" max="100" value="80">
+      <span class="val" id="volumeVal">80</span>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-wrap" id="modalWrap">
+  <div class="modal">
+    <h2>Configuração de conexão</h2>
+    <div class="field-row">
+      <div class="field">
+        <label>IP do computador (Holyrics)</label>
+        <input type="text" id="cfgIp" placeholder="192.168.1.50" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>Porta</label>
+        <input type="text" id="cfgPort" placeholder="8091" inputmode="numeric">
+      </div>
+    </div>
+    <div class="field">
+      <label>Token (API Server &gt; gerenciar permissões)</label>
+      <input type="text" id="cfgToken" placeholder="seu-token">
+    </div>
+    <p class="hint">
+      No computador: Menu Arquivo → Configurações → API Server. Ative o servidor, anote a porta e crie um token com as permissões de apresentação, tela e player liberadas. Celular e computador precisam estar na mesma rede wifi.
+    </p>
+    <div class="modal-actions">
+      <button id="cancelSettings">Cancelar</button>
+      <button class="save" id="saveSettings">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="bible-modal" id="bibleModal">
+  <div class="bible-head">
+    <button class="back-btn" id="bibleBack" hidden>‹</button>
+    <h2 id="bibleTitle">Escolha o livro</h2>
+    <button class="close-btn" id="bibleClose">✕</button>
+  </div>
+  <div class="quick-jump">
+    <input type="text" id="quickJumpInput" placeholder="Atalho: Gn 8 1 ou Gn 8:1">
+    <button id="quickJumpBtn">Ir</button>
+  </div>
+  <div class="bible-body">
+    <div class="book-grid" id="bookGrid"></div>
+    <div class="section-label" id="chapterLabel" style="margin:2px 2px 2px;" hidden>Capítulo</div>
+    <div class="chapter-grid" id="chapterGrid" hidden></div>
+    <div class="verse-step" id="verseStep" hidden>
+      <button class="manual-toggle" id="previewChapterBtn">📖 Ver capítulo inteiro com texto</button>
+      <div class="section-label" style="margin:2px 2px 2px;">Versículo</div>
+      <div class="verse-grid" id="verseGrid"></div>
+      <button class="manual-toggle" id="manualToggle">✏️ digitar versículo(s) manualmente</button>
+      <div class="manual-entry" id="manualEntry" hidden>
+        <div class="field">
+          <label>Versículo(s)</label>
+          <input type="text" id="verseInput" placeholder="1 ou 1-3 ou 1,5,9" inputmode="text">
+        </div>
+        <button class="show-btn" id="showVerseBtn">Exibir na tela</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bible-live-preview">
+    <div class="section-head">
+      <div class="section-label">Versículo atual</div>
+      <button class="refresh-btn" id="refreshBibleLyrics">⟳</button>
+    </div>
+    <div class="lyrics-list" id="bibleLyricsList">
+      <div class="playlist-empty">Nada aqui no momento.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'holyricsControlConfig';
+  let config = { ip:'', port:'8091', token:'' };
+  let toggleState = { F8:false, F9:false, F10:false };
+
+  function loadConfig(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) config = JSON.parse(raw);
+    }catch(e){}
+    updateTargetLabel();
+  }
+  function saveConfig(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    updateTargetLabel();
+  }
+  function updateTargetLabel(){
+    const label = document.getElementById('targetLabel');
+    if(config.ip && config.port && config.token){
+      label.textContent = 'checando conexão…';
+      checkConnection();
+    } else {
+      label.textContent = 'toque na engrenagem para configurar';
+      setDotState('off');
+    }
+  }
+
+  function setDotState(state){
+    // state: 'off' (not configured/unknown), 'ok' (green), 'err' (red)
+    const dot = document.getElementById('statusDot');
+    const label = document.getElementById('targetLabel');
+    dot.classList.remove('on', 'err');
+    if(state === 'ok'){
+      dot.classList.add('on');
+      label.textContent = 'conectado';
+    } else if(state === 'err'){
+      dot.classList.add('err');
+      label.textContent = 'sem conexão com o Holyrics';
+    } else {
+      label.textContent = 'toque na engrenagem para configurar';
+    }
+  }
+
+  async function checkConnection(){
+    if(!config.ip || !config.port || !config.token) return;
+    const data = await callAction('GetCPInfo', {}, { silent:true });
+    setDotState(data && data.status === 'ok' ? 'ok' : 'err');
+  }
+  setInterval(checkConnection, 20000); // keep the LED honest while the app stays open
+
+  // Theme toggle (dark default, light optional) — persisted in localStorage
+  const THEME_KEY = 'holyricsControlTheme';
+  function applyTheme(theme){
+    document.body.classList.toggle('light', theme === 'light');
+    document.getElementById('themeToggle').textContent = theme === 'light' ? '☀️' : '🌙';
+  }
+  function loadTheme(){
+    const saved = localStorage.getItem(THEME_KEY) || 'dark';
+    applyTheme(saved);
+  }
+  document.getElementById('themeToggle').addEventListener('click', ()=>{
+    const isLight = document.body.classList.contains('light');
+    const next = isLight ? 'dark' : 'light';
+    applyTheme(next);
+    localStorage.setItem(THEME_KEY, next);
+  });
+  loadTheme();
+
+  // Modal handling
+  const modalWrap = document.getElementById('modalWrap');
+  document.getElementById('openSettings').onclick = () => {
+    document.getElementById('cfgIp').value = config.ip;
+    document.getElementById('cfgPort').value = config.port;
+    document.getElementById('cfgToken').value = config.token;
+    modalWrap.classList.add('show');
+  };
+  document.getElementById('cancelSettings').onclick = () => modalWrap.classList.remove('show');
+  document.getElementById('saveSettings').onclick = () => {
+    config.ip = document.getElementById('cfgIp').value.trim();
+    config.port = document.getElementById('cfgPort').value.trim() || '8091';
+    config.token = document.getElementById('cfgToken').value.trim();
+    saveConfig();
+    modalWrap.classList.remove('show');
+    showToast('Configuração salva');
+    loadPlaylist();
+    refreshPlayerState();
+  };
+
+  // Toast
+  let toastTimer;
+  function showToast(msg, isErr){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.toggle('err', !!isErr);
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> t.classList.remove('show'), 1600);
+  }
+
+  // Core request — reads the real response from Holyrics (confirmed the local
+  // API Server does not block cross-origin requests), so errors are shown for real.
+  // Returns the parsed response (or null) so callers can inspect data/status themselves.
+  async function callAction(action, payload, opts){
+    opts = opts || {};
+    if(!config.ip || !config.token){
+      showToast('Configure a conexão primeiro', true);
+      document.getElementById('openSettings').click();
+      return null;
+    }
+    const url = `http://${config.ip}:${config.port}/api/${action}?token=${encodeURIComponent(config.token)}`;
+    try{
+      const res = await fetch(url, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload || {})
+      });
+      let data = null;
+      try{ data = await res.json(); }catch(e){}
+      if(!opts.silent){
+        if(data && data.status === 'error'){
+          showToast(data.error || 'Erro retornado pelo Holyrics', true);
+        } else if(!res.ok){
+          showToast('HTTP ' + res.status + ' — verifique o token', true);
+        } else {
+          showToast(action + ' ok');
+        }
+      }
+      return data;
+    }catch(err){
+      if(!opts.silent) showToast('Falha de rede: verifique IP/wifi', true);
+      return null;
+    }
+  }
+
+  // Song playlist (today's service order)
+  let currentPlaylist = [];
+  let selectActionThatWorks = null; // cached once we find the right API action name
+
+  async function loadPlaylist(){
+    const btn = document.getElementById('refreshPlaylist');
+    btn.classList.add('spin');
+    const data = await callAction('GetSongPlaylist', {}, { silent:true });
+    btn.classList.remove('spin');
+    const box = document.getElementById('playlist');
+    if(!data || data.status !== 'ok' || !Array.isArray(data.data)){
+      box.innerHTML = '<div class="playlist-empty">Não foi possível carregar. Confira a conexão e toque em ⟳.</div>';
+      return;
+    }
+    currentPlaylist = data.data;
+    renderPlaylist();
+  }
+
+  function renderPlaylist(){
+    const box = document.getElementById('playlist');
+    if(currentPlaylist.length === 0){
+      box.innerHTML = '<div class="playlist-empty">Nenhuma música na programação de hoje.</div>';
+      return;
+    }
+    box.innerHTML = '';
+    currentPlaylist.forEach((item, idx)=>{
+      const row = document.createElement('button');
+      row.className = 'playlist-item';
+      row.innerHTML = `
+        <span class="num">${idx + 1}</span>
+        <span class="meta">
+          <span class="title"></span>
+          <span class="artist"></span>
+        </span>`;
+      row.querySelector('.title').textContent = item.title || '(sem título)';
+      row.querySelector('.artist').textContent = item.artist || '';
+      row.addEventListener('click', ()=> selectSong(idx, item, row));
+      box.appendChild(row);
+    });
+  }
+
+  // Tries known candidate action names until one works, then remembers it.
+  // This part is unconfirmed against your Holyrics version — first tap may need one retry.
+  const SELECT_ACTION_CANDIDATES = ['SelectSongPlaylistItem', 'SelectItemFromSongPlaylist', 'SongPlaylistAction'];
+  async function selectSong(idx, item, rowEl){
+    document.querySelectorAll('.playlist-item.playing').forEach(el => el.classList.remove('playing'));
+    rowEl.classList.add('playing');
+
+    const actionsToTry = selectActionThatWorks ? [selectActionThatWorks] : SELECT_ACTION_CANDIDATES;
+    for(const action of actionsToTry){
+      const data = await callAction(action, { index: idx, id: item.id }, { silent:true });
+      if(data && data.status === 'ok'){
+        selectActionThatWorks = action;
+        showToast(item.title + ' selecionada');
+        loadCurrentLyrics();
+        return;
+      }
+    }
+    showToast('Não consegui selecionar — confira o console', true);
+  }
+
+  document.getElementById('refreshPlaylist').addEventListener('click', loadPlaylist);
+
+  // Current content preview — shows the slides of whatever is on screen right now, so you
+  // can jump straight to a specific part instead of only stepping with arrows. Two separate
+  // panels (song lyrics vs. Bible verses); which one gets filled is decided by asking
+  // Holyrics what's actually live right now (data.type === 'verse') rather than trusting a
+  // locally-tracked flag, so it stays correct even if the presentation was started from the
+  // Holyrics desktop itself, or the app was reopened mid-service.
+  async function refreshLivePreview(){
+    document.getElementById('refreshLyrics')?.classList.add('spin');
+    document.getElementById('refreshBibleLyrics')?.classList.add('spin');
+    const data = await callAction('GetCurrentPresentation', { include_slides: true }, { silent:true });
+    document.getElementById('refreshLyrics')?.classList.remove('spin');
+    document.getElementById('refreshBibleLyrics')?.classList.remove('spin');
+
+    const isBible = !!(data && data.data && data.data.type === 'verse');
+    const activeId = isBible ? 'bibleLyricsList' : 'lyricsList';
+    const otherId = isBible ? 'lyricsList' : 'bibleLyricsList';
+    document.getElementById(otherId).innerHTML = '<div class="playlist-empty">Nada aqui no momento.</div>';
+
+    const box = document.getElementById(activeId);
+    if(!data || data.status !== 'ok' || !data.data || !Array.isArray(data.data.slides) || data.data.slides.length === 0){
+      box.innerHTML = '<div class="playlist-empty">Nada na tela agora.</div>';
+      return;
+    }
+    const currentIndex = typeof data.data.slide_index === 'number' ? data.data.slide_index
+      : typeof data.data.current_slide === 'number' ? data.data.current_slide
+      : typeof data.data.slide_number === 'number' ? data.data.slide_number - 1 : null;
+    box.innerHTML = '';
+    data.data.slides.forEach((slide, idx)=>{
+      const row = document.createElement('button');
+      row.className = 'lyrics-item' + (idx === currentIndex ? ' current' : '');
+      // Bible verses come back without "text" (licensed content isn't exposed via API) —
+      // fall back to the reference (e.g. "2 Samuel 13.1") so it's still useful to navigate.
+      const snippet = (slide.text || slide.reference || '').trim();
+      row.innerHTML = `
+        <span class="num">${idx + 1}</span>
+        <span class="body">
+          ${slide.slide_description ? `<span class="tag"></span>` : ''}
+          <span class="snippet"></span>
+        </span>`;
+      if(slide.slide_description) row.querySelector('.tag').textContent = slide.slide_description;
+      row.querySelector('.snippet').textContent = snippet || '(sem texto)';
+      row.addEventListener('click', ()=> jumpToSlide(idx, row, activeId));
+      box.appendChild(row);
+    });
+  }
+
+  function loadCurrentLyrics(){ return refreshLivePreview(); }
+  function loadCurrentBibleLyrics(){ return refreshLivePreview(); }
+
+  async function jumpToSlide(idx, rowEl, listId){
+    document.querySelectorAll(`#${listId} .lyrics-item.current`).forEach(el => el.classList.remove('current'));
+    rowEl.classList.add('current');
+
+    // ActionGoToIndex works for songs but Holyrics rejects it for Bible verse
+    // presentations ("No presentation available"), even mid-presentation. When that
+    // happens, fall back to stepping with ActionNext/ActionPrevious the right number
+    // of times based on the real current slide.
+    let data = await callAction('ActionGoToIndex', { index: idx }, { silent:true });
+    if(data && data.status === 'ok') return;
+
+    const info = await callAction('GetCurrentPresentation', {}, { silent:true });
+    if(!info || info.status !== 'ok' || typeof info.data.slide_number !== 'number'){
+      showToast('Não consegui pular pro trecho', true);
+      return;
+    }
+    const currentIdx = info.data.slide_number - 1;
+    const delta = idx - currentIdx;
+    if(delta === 0) return;
+    const action = delta > 0 ? 'ActionNext' : 'ActionPrevious';
+    for(let i = 0; i < Math.abs(delta); i++){
+      const stepData = await callAction(action, {}, { silent:true });
+      if(!stepData || stepData.status !== 'ok'){
+        showToast((stepData && stepData.error) || 'Não consegui pular pro trecho', true);
+        return;
+
+      }
+    }
+  }
+
+  document.getElementById('refreshLyrics').addEventListener('click', refreshLivePreview);
+  document.getElementById('refreshBibleLyrics').addEventListener('click', refreshLivePreview);
+
+  // Presentation nav + exit
+  document.querySelectorAll('.btn[data-action]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      await callAction(btn.dataset.action);
+      refreshLivePreview();
+    });
+  });
+
+  // F8/F9/F10 toggles
+  document.querySelectorAll('.chip[data-toggle]').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const key = chip.dataset.toggle;
+      callAction('Toggle' + key);
+      toggleState[key] = !toggleState[key];
+      chip.classList.toggle('active', toggleState[key]);
+    });
+  });
+
+  // Media controls — play/pause and mute are real toggles: we ask Holyrics for the
+  // current player state first, then send the opposite action, so the icon and the
+  // actual command always match what's really happening (not just an optimistic guess).
+  let playing = false;
+  let muted = false;
+
+  async function refreshPlayerState(){
+    const data = await callAction('GetMediaPlayerInfo', {}, { silent:true });
+    if(data && data.status === 'ok' && data.data){
+      playing = !!data.data.playing;
+      muted = !!data.data.mute;
+      updatePlayerButtons();
+      if(typeof data.data.volume === 'number'){
+        slider.value = data.data.volume;
+        volVal.textContent = data.data.volume;
+      }
+    }
+  }
+  function updatePlayerButtons(){
+    document.getElementById('playPauseBtn').textContent = playing ? '⏸' : '▶';
+    document.getElementById('muteBtn').textContent = muted ? '🔇' : '🔊';
+  }
+
+  document.querySelectorAll('.media-btn[data-media]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const kind = btn.dataset.media;
+      if(kind === 'playpause'){
+        const data = await callAction('MediaPlayerAction', { action: playing ? 'pause' : 'play' }, { silent:true });
+        if(data && data.status === 'ok'){ playing = !playing; updatePlayerButtons(); }
+        else showToast((data && data.error) || 'Erro no player', true);
+      } else if(kind === 'mute'){
+        const data = await callAction('MediaPlayerAction', { mute: !muted }, { silent:true });
+        if(data && data.status === 'ok'){ muted = !muted; updatePlayerButtons(); }
+        else showToast((data && data.error) || 'Erro no player', true);
+      } else {
+        callAction('MediaPlayerAction', { action: kind });
+      }
+    });
+  });
+
+  // Volume slider
+  const slider = document.getElementById('volumeSlider');
+  const volVal = document.getElementById('volumeVal');
+  let volTimer;
+  slider.addEventListener('input', ()=>{
+    volVal.textContent = slider.value;
+    clearTimeout(volTimer);
+    volTimer = setTimeout(async ()=>{
+      const data = await callAction('MediaPlayerAction', { volume: Number(slider.value), mute: false }, { silent:true });
+      if(data && data.status === 'ok'){
+        muted = false;
+        updatePlayerButtons();
+      } else if(data && data.error){
+        showToast(data.error, true);
+      }
+    }, 250);
+  });
+
+  // Bible picker — book grid mirrors the layout/colors of Holyrics' own book picker
+  const BIBLE_BOOKS = [
+    {a:'Gn',n:'Gênesis',g:'pent',v:[31,25,24,26,32,22,24,22,29,32,32,20,18,24,21,16,27,33,38,18,34,24,20,67,34,35,46,22,35,43,55,32,20,31,29,43,36,30,23,23,57,38,34,34,28,34,31,22,33,26]},
+    {a:'Ex',n:'Êxodo',g:'pent',v:[22,25,22,31,23,30,25,32,35,29,10,51,22,31,27,36,16,27,25,26,36,31,33,18,40,37,21,43,46,38,18,35,23,35,35,38,29,31,43,38]},
+    {a:'Lv',n:'Levítico',g:'pent',v:[17,16,17,35,19,30,38,36,24,20,47,8,59,57,33,34,16,30,37,27,24,33,44,23,55,46,34]},
+    {a:'Nm',n:'Números',g:'pent',v:[54,34,51,49,31,27,89,26,23,36,35,16,33,45,41,50,13,32,22,29,35,41,30,25,18,65,23,31,40,16,54,42,56,29,34,13]},
+    {a:'Dt',n:'Deuteronômio',g:'pent',v:[46,37,29,49,33,25,26,20,29,22,32,32,18,29,23,22,20,22,21,20,23,30,25,22,19,19,26,68,29,20,30,52,29,12]},
+    {a:'Js',n:'Josué',g:'hist',v:[18,24,17,24,15,27,26,35,27,43,23,24,33,15,63,10,18,28,51,9,45,34,16,33]},
+    {a:'Jz',n:'Juízes',g:'hist',v:[36,23,31,24,31,40,25,35,57,18,40,15,25,20,20,31,13,31,30,48,25]},
+    {a:'Rt',n:'Rute',g:'hist',v:[22,23,18,22]},
+    {a:'1Sm',n:'1 Samuel',g:'hist',v:[28,36,21,22,12,21,17,22,27,27,15,25,23,52,35,23,58,30,24,42,15,23,29,22,44,25,12,25,11,31,13]},
+    {a:'2Sm',n:'2 Samuel',g:'hist',v:[27,32,39,12,25,23,29,18,13,19,27,31,39,33,37,23,29,33,43,26,22,51,39,25]},
+    {a:'1Rs',n:'1 Reis',g:'hist',v:[53,46,28,34,18,38,51,66,28,29,43,33,34,31,34,34,24,46,21,43,29,53]},
+    {a:'2Rs',n:'2 Reis',g:'hist',v:[18,25,27,44,27,33,20,29,37,36,21,21,25,29,38,20,41,37,37,21,26,20,37,20,30]},
+    {a:'1Cr',n:'1 Crônicas',g:'hist',v:[54,55,24,43,26,81,40,40,44,14,47,40,14,17,29,43,27,17,19,8,30,19,32,31,31,32,34,21,30]},
+    {a:'2Cr',n:'2 Crônicas',g:'hist',v:[17,18,17,22,14,42,22,18,31,19,23,16,22,15,19,14,19,34,11,37,20,12,21,27,28,23,9,27,36,27,21,33,25,33,27,23]},
+    {a:'Ed',n:'Esdras',g:'hist',v:[11,70,13,24,17,22,28,36,15,44]},
+    {a:'Ne',n:'Neemias',g:'hist',v:[11,20,32,23,19,19,73,18,38,39,36,47,31]},
+    {a:'Et',n:'Ester',g:'hist',v:[22,23,15,17,14,14,10,17,32,3]},
+    {a:'Jó',n:'Jó',g:'poet',v:[22,13,26,21,27,30,21,22,35,22,20,25,28,22,35,22,16,21,29,29,34,30,17,25,6,14,23,28,25,31,40,22,33,37,16,33,24,41,30,24,34,17]},
+    {a:'Sl',n:'Salmos',g:'poet',v:[6,12,8,8,12,10,17,9,20,18,7,8,6,7,5,11,15,50,14,9,13,31,6,10,22,12,14,9,11,12,24,11,22,22,28,12,40,22,13,17,13,11,5,26,17,11,9,14,20,23,19,9,6,7,23,13,11,11,17,12,8,12,11,10,13,20,7,35,36,5,24,20,28,23,10,12,20,72,13,19,16,8,18,12,13,17,7,18,52,17,16,15,5,23,11,13,12,9,9,5,8,28,22,35,45,48,43,13,31,7,10,10,9,8,18,19,2,29,176,7,8,9,4,8,5,6,5,6,8,8,3,18,3,3,21,26,9,8,24,13,10,7,12,15,21,10,20,14,9,6]},
+    {a:'Pv',n:'Provérbios',g:'poet',v:[33,22,35,27,23,35,27,36,18,32,31,28,25,35,33,33,28,24,29,30,31,29,35,34,28,28,27,28,27,33,31]},
+    {a:'Ec',n:'Eclesiastes',g:'poet',v:[18,26,22,16,20,12,29,17,18,20,10,14]},
+    {a:'Ct',n:'Cantares',g:'poet',v:[17,17,11,16,16,13,13,14]},
+    {a:'Is',n:'Isaías',g:'prof',v:[31,22,26,6,30,13,25,22,21,34,16,6,22,32,9,14,14,7,25,6,17,25,18,23,12,21,13,29,24,33,9,20,24,17,10,22,38,22,8,31,29,25,28,28,25,13,15,22,26,11,23,15,12,17,13,12,21,14,21,22,11,12,19,12,25,24]},
+    {a:'Jr',n:'Jeremias',g:'prof',v:[19,37,25,31,31,30,34,22,26,25,23,17,27,22,21,21,27,23,15,18,14,30,40,10,38,24,22,17,32,24,40,44,26,22,19,32,21,28,18,16,18,22,13,30,5,28,7,47,39,46,64,34]},
+    {a:'Lm',n:'Lamentações',g:'prof',v:[22,22,66,22,22]},
+    {a:'Ez',n:'Ezequiel',g:'prof',v:[28,10,27,17,17,14,27,18,11,22,25,28,23,23,8,63,24,32,14,49,32,31,49,27,17,21,36,26,21,26,18,32,33,31,15,38,28,23,29,49,26,20,27,31,25,24,23,35]},
+    {a:'Dn',n:'Daniel',g:'prof',v:[21,49,30,37,31,28,28,27,27,21,45,13]},
+    {a:'Os',n:'Oséias',g:'prof',v:[11,23,5,19,15,11,16,14,17,15,12,14,16,9]},
+    {a:'Jl',n:'Joel',g:'prof',v:[20,32,21]},
+    {a:'Am',n:'Amós',g:'prof',v:[15,16,15,13,27,14,17,14,15]},
+    {a:'Ob',n:'Obadias',g:'prof',v:[21]},
+    {a:'Jn',n:'Jonas',g:'prof',v:[17,10,10,11]},
+    {a:'Mq',n:'Miquéias',g:'prof',v:[16,13,12,13,15,16,20]},
+    {a:'Na',n:'Naum',g:'prof',v:[15,13,19]},
+    {a:'Hc',n:'Habacuque',g:'prof',v:[17,20,19]},
+    {a:'Sf',n:'Sofonias',g:'prof',v:[18,15,20]},
+    {a:'Ag',n:'Ageu',g:'prof',v:[15,23]},
+    {a:'Zc',n:'Zacarias',g:'prof',v:[21,13,10,14,11,15,14,23,17,12,17,14,9,21]},
+    {a:'Ml',n:'Malaquias',g:'prof',v:[14,17,18,6]},
+    {a:'Mt',n:'Mateus',g:'evang',v:[25,23,17,25,48,34,29,34,38,42,30,50,58,36,39,28,27,35,30,34,46,46,39,51,46,75,66,20]},
+    {a:'Mc',n:'Marcos',g:'evang',v:[45,28,35,41,43,56,37,38,50,52,33,44,37,72,47,20]},
+    {a:'Lc',n:'Lucas',g:'evang',v:[80,52,38,44,39,49,50,56,62,42,54,59,35,35,32,31,37,43,48,47,38,71,56,53]},
+    {a:'Jo',n:'João',g:'evang',v:[51,25,36,54,47,71,53,59,41,42,57,50,38,31,27,33,26,40,42,31,25]},
+    {a:'At',n:'Atos',g:'atos',v:[26,47,26,37,42,15,60,40,43,48,30,25,52,28,41,40,34,28,41,38,40,30,35,27,27,32,44,31]},
+    {a:'Rm',n:'Romanos',g:'cart',v:[32,29,31,25,21,23,25,39,33,21,36,21,14,23,33,27]},
+    {a:'1Co',n:'1 Coríntios',g:'cart',v:[31,16,23,21,13,20,40,13,27,33,34,31,13,40,58,24]},
+    {a:'2Co',n:'2 Coríntios',g:'cart',v:[24,17,18,18,21,18,16,24,15,18,33,21,14]},
+    {a:'Gl',n:'Gálatas',g:'cart',v:[24,21,29,31,26,18]},
+    {a:'Ef',n:'Efésios',g:'cart',v:[23,22,21,32,33,24]},
+    {a:'Fp',n:'Filipenses',g:'cart',v:[30,30,21,23]},
+    {a:'Cl',n:'Colossenses',g:'cart',v:[29,23,25,18]},
+    {a:'1Ts',n:'1 Tessalonicenses',g:'cart',v:[10,20,13,18,28]},
+    {a:'2Ts',n:'2 Tessalonicenses',g:'cart',v:[12,17,18]},
+    {a:'1Tm',n:'1 Timóteo',g:'cart',v:[20,15,16,16,25,21]},
+    {a:'2Tm',n:'2 Timóteo',g:'cart',v:[18,26,17,22]},
+    {a:'Tt',n:'Tito',g:'cart',v:[16,15,15]},
+    {a:'Fm',n:'Filemom',g:'cart',v:[25]},
+    {a:'Hb',n:'Hebreus',g:'cart',v:[14,18,19,16,14,20,28,13,28,39,40,29,25]},
+    {a:'Tg',n:'Tiago',g:'cart',v:[27,26,18,17,20]},
+    {a:'1Pe',n:'1 Pedro',g:'cart',v:[25,25,22,19,14]},
+    {a:'2Pe',n:'2 Pedro',g:'cart',v:[21,22,18]},
+    {a:'1Jo',n:'1 João',g:'cart',v:[10,29,24,21,21]},
+    {a:'2Jo',n:'2 João',g:'cart',v:[13]},
+    {a:'3Jo',n:'3 João',g:'cart',v:[14]},
+    {a:'Jd',n:'Judas',g:'cart',v:[25]},
+    {a:'Ap',n:'Apocalipse',g:'apoc',v:[20,29,22,11,14,17,17,13,21,11,19,17,18,20,8,21,18,24,21,15,27,21]},
+  ];
+  const BIBLE_GROUP_COLORS = {
+    pent:'#5a4230', hist:'#c9791f', poet:'#a5312c', prof:'#7d3a72',
+    evang:'#3c4f8e', atos:'#1c8fa0', cart:'#1c8f5a', apoc:'#8fae2a'
+  };
+
+  let selectedBook = null, selectedChapter = null;
+
+  function renderBookGrid(){
+    const grid = document.getElementById('bookGrid');
+    grid.innerHTML = '';
+    BIBLE_BOOKS.forEach(book=>{
+      const tile = document.createElement('button');
+      tile.className = 'book-tile';
+      tile.style.background = BIBLE_GROUP_COLORS[book.g];
+      tile.innerHTML = `<span class="abbr">${book.a}</span><span class="full">${book.n}</span>`;
+      tile.addEventListener('click', ()=> openChapterStep(book));
+      grid.appendChild(tile);
+    });
+  }
+
+  function openChapterStep(book){
+    selectedBook = book;
+    document.getElementById('bookGrid').hidden = true;
+    document.getElementById('chapterLabel').hidden = false;
+    document.getElementById('chapterGrid').hidden = false;
+    document.getElementById('verseStep').hidden = true;
+    document.getElementById('bibleTitle').textContent = book.n;
+    document.getElementById('bibleBack').hidden = false;
+    const grid = document.getElementById('chapterGrid');
+    grid.innerHTML = '';
+    for(let i = 1; i <= book.v.length; i++){
+      const tile = document.createElement('button');
+      tile.className = 'chapter-tile';
+      tile.textContent = i;
+      tile.addEventListener('click', ()=> openVerseStep(i));
+      grid.appendChild(tile);
+    }
+  }
+
+  function openVerseStep(chapter){
+    selectedChapter = chapter;
+    document.getElementById('chapterLabel').hidden = true;
+    document.getElementById('chapterGrid').hidden = true;
+    document.getElementById('verseStep').hidden = false;
+    document.getElementById('bibleTitle').textContent = selectedBook.n + ' ' + chapter;
+    document.getElementById('manualEntry').hidden = true;
+    document.getElementById('verseInput').value = '';
+    renderVerseGrid();
+  }
+
+  function renderVerseGrid(){
+    const grid = document.getElementById('verseGrid');
+    grid.innerHTML = '';
+    const total = selectedBook.v[selectedChapter - 1]; // exact verse count for this chapter
+    for(let i = 1; i <= total; i++){
+      const tile = document.createElement('button');
+      tile.className = 'verse-tile';
+      tile.textContent = i;
+      tile.addEventListener('click', ()=> showSingleVerseInChapter(selectedBook, selectedChapter, i, tile));
+      grid.appendChild(tile);
+    }
+  }
+
+  // Holyrics treats a lone single verse as a position within the WHOLE Bible (huge
+  // slide_number, empty slides array) instead of a scoped presentation — so GetCurrentPresentation
+  // can't return a useful list for it. Fix: always display the full chapter as a range (which
+  // Holyrics does scope properly), then step forward to the requested verse with ActionNext.
+  async function showSingleVerseInChapter(book, chapter, verseNum, tileEl){
+    const total = book.v[chapter - 1];
+    const capped = Math.min(total, 100);
+    const references = `${book.a} ${chapter}:1-${capped}`;
+    const data = await callAction('ShowVerse', { references }, { silent:true });
+    if(!data || data.status !== 'ok'){
+      showToast((data && data.error) || 'Não consegui exibir', true);
+      return;
+    }
+    if(verseNum > 1 && verseNum <= capped){
+      for(let i = 0; i < verseNum - 1; i++){
+        const step = await callAction('ActionNext', {}, { silent:true });
+        if(!step || step.status !== 'ok') break;
+      }
+    }
+    showToast(`${book.a} ${chapter}:${verseNum} ok`);
+    document.querySelectorAll('.verse-tile.current').forEach(el => el.classList.remove('current'));
+    if(tileEl) tileEl.classList.add('current');
+    loadCurrentBibleLyrics();
+  }
+
+  document.getElementById('previewChapterBtn').addEventListener('click', async ()=>{
+    const total = selectedBook.v[selectedChapter - 1];
+    const cappedTotal = Math.min(total, 100); // Holyrics limits ShowVerse to 100 verses per request
+    const references = `${selectedBook.a} ${selectedChapter}:1-${cappedTotal}`;
+    const data = await callAction('ShowVerse', { references }, { silent:true });
+    if(data && data.status === 'ok'){
+      showToast(total > 100 ? `Carregado 1-${cappedTotal} (limite da API)` : 'Capítulo carregado');
+      loadCurrentBibleLyrics();
+    } else {
+      showToast((data && data.error) || 'Não consegui carregar o capítulo', true);
+    }
+  });
+
+  document.getElementById('manualToggle').addEventListener('click', ()=>{
+    const entry = document.getElementById('manualEntry');
+    entry.hidden = !entry.hidden;
+    if(!entry.hidden) document.getElementById('verseInput').focus();
+  });
+
+  document.getElementById('bibleBack').addEventListener('click', ()=>{
+    if(!document.getElementById('verseStep').hidden){
+      document.getElementById('verseStep').hidden = true;
+      document.getElementById('chapterLabel').hidden = false;
+      document.getElementById('chapterGrid').hidden = false;
+      document.getElementById('bibleTitle').textContent = selectedBook.n;
+    } else if(!document.getElementById('chapterGrid').hidden){
+      document.getElementById('chapterLabel').hidden = true;
+      document.getElementById('chapterGrid').hidden = true;
+      document.getElementById('bookGrid').hidden = false;
+      document.getElementById('bibleTitle').textContent = 'Escolha o livro';
+      document.getElementById('bibleBack').hidden = true;
+    }
+  });
+
+  function openBibleModal(){
+    document.getElementById('bibleModal').classList.add('show');
+    document.getElementById('bookGrid').hidden = false;
+    document.getElementById('chapterLabel').hidden = true;
+    document.getElementById('chapterGrid').hidden = true;
+    document.getElementById('verseStep').hidden = true;
+    document.getElementById('bibleTitle').textContent = 'Escolha o livro';
+    document.getElementById('bibleBack').hidden = true;
+    document.getElementById('quickJumpInput').value = '';
+  }
+  document.getElementById('openBible').addEventListener('click', openBibleModal);
+  document.getElementById('bibleClose').addEventListener('click', ()=>{
+    document.getElementById('bibleModal').classList.remove('show');
+  });
+
+  async function showReference(references, tileEl){
+    const data = await callAction('ShowVerse', { references }, { silent:true });
+    if(data && data.status === 'ok'){
+      showToast(references + ' ok');
+      document.querySelectorAll('.verse-tile.current').forEach(el => el.classList.remove('current'));
+      if(tileEl) tileEl.classList.add('current');
+      loadCurrentBibleLyrics();
+    } else {
+      showToast((data && data.error) || 'Não consegui exibir', true);
+    }
+  }
+
+  document.getElementById('showVerseBtn').addEventListener('click', ()=>{
+    const verse = document.getElementById('verseInput').value.trim() || '1';
+    if(/^\d+$/.test(verse)){
+      showSingleVerseInChapter(selectedBook, selectedChapter, parseInt(verse, 10));
+    } else {
+      showReference(`${selectedBook.a} ${selectedChapter}:${verse}`);
+    }
+  });
+
+  // Quick jump shortcut — accepts "Gn 8 1", "Gn 8:1", or just "Gn 8" (defaults to verse 1)
+  function stripAccents(s){
+    return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+  function findBookByAbbr(token){
+    const norm = stripAccents(token.replace('.', ''));
+    return BIBLE_BOOKS.find(b => stripAccents(b.a) === norm);
+  }
+  function parseQuickJump(raw){
+    const parts = raw.trim().split(/\s+/).filter(Boolean);
+    if(parts.length < 2) return null;
+    const book = findBookByAbbr(parts[0]);
+    if(!book) return null;
+    let rest = parts.slice(1).join(' ');
+    let chapter, verseSpec;
+    if(rest.includes(':')){
+      const [c, v] = rest.split(':');
+      chapter = parseInt(c, 10);
+      verseSpec = (v || '1').trim();
+    } else {
+      const nums = rest.split(/\s+/);
+      chapter = parseInt(nums[0], 10);
+      verseSpec = nums.length >= 2 ? nums.slice(1).join(',') : '1';
+    }
+    if(!chapter || !book.v[chapter - 1]) return null;
+    return { book, chapter, verseSpec };
+  }
+  function runQuickJump(){
+    const raw = document.getElementById('quickJumpInput').value;
+    const parsed = parseQuickJump(raw);
+    if(!parsed){
+      showToast('Não entendi — tenta "Gn 8 1" ou "Gn 8:1"', true);
+      return;
+    }
+    if(/^\d+$/.test(parsed.verseSpec)){
+      showSingleVerseInChapter(parsed.book, parsed.chapter, parseInt(parsed.verseSpec, 10));
+    } else {
+      showReference(`${parsed.book.a} ${parsed.chapter}:${parsed.verseSpec}`);
+    }
+  }
+  document.getElementById('quickJumpBtn').addEventListener('click', runQuickJump);
+  document.getElementById('quickJumpInput').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') runQuickJump();
+  });
+
+  renderBookGrid();
+
+  loadConfig();
+  if(!config.ip){
+    setTimeout(()=> document.getElementById('openSettings').click(), 300);
+  } else {
+    loadPlaylist();
+    refreshPlayerState();
+    loadCurrentLyrics();
+  }
+
+  // PWA install support — only works when served over HTTPS (or localhost), not from
+  // a local file:// path. Silently does nothing if unsupported, so it's safe either way.
+  if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
