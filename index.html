@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -822,7 +821,8 @@
     showToast('Não consegui iniciar — confira o console', true);
   });
 
-  // Public announcements — shows a text alert on the main screen via SetAlert.
+  // Public announcements — shows text on the main public screen via ShowQuickPresentation
+  // (SetAlert was tried first but only affects the private backstage communication panel).
   document.getElementById('playAnnouncement').addEventListener('click', ()=>{
     document.getElementById('alertText').value = '';
     document.getElementById('alertModalWrap').classList.add('show');
@@ -833,10 +833,11 @@
   document.getElementById('sendAlert').addEventListener('click', async ()=>{
     const text = document.getElementById('alertText').value.trim();
     if(!text){ showToast('Digite uma mensagem', true); return; }
-    const data = await callAction('SetAlert', { text }, { silent:true });
+    const data = await callAction('ShowQuickPresentation', { text }, { silent:true });
     if(data && data.status === 'ok'){
       showToast('Aviso exibido');
       document.getElementById('alertModalWrap').classList.remove('show');
+      refreshLivePreview();
     } else {
       showToast((data && data.error) || 'Não consegui exibir', true);
     }
